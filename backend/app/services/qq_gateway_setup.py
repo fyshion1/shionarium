@@ -17,6 +17,8 @@ def folder():
 
 def qq_versions():
     """Read running QQ's adjacent manifest; unknown is not evidence of old QQ."""
+    if os.name != 'nt':
+        return []
     import psutil
     result = set()
     for proc in psutil.process_iter(['name', 'exe']):
@@ -38,7 +40,7 @@ def diagnostics():
     from ..routers.nest import _port_listening, _setting
     target = folder()
     installed = (target / 'node.exe').is_file() and (target / 'index.mjs').is_file()
-    versions = qq_versions() if os.name == 'nt' else []
+    versions = qq_versions()
     old = [v for v in versions if tuple(map(int, re.findall(r'\d+', v)[:3])) < (9, 9, 33)]
     return {'installed': installed, 'folder': str(target), 'versions': versions,
             'old_qq': bool(old), 'webui_online': _port_listening(int(_setting('qq_bridge', 'gateway.webui_port', 5099))),
