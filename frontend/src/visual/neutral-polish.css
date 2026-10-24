@@ -1,0 +1,453 @@
+/* ============================================================================
+   中性界面视觉打磨
+   目标：不动结构、不改组件逻辑，只重调「颜色 / 层次 / 节奏 / 对比度」。
+   撤回：删掉 main.tsx 里 `import './visual/neutral-polish.css'` 这一行即可。
+   ========================================================================== */
+
+/* ---------- 1. 字体与基础 ---------- */
+:root[data-core-ui] {
+  --polish-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC",
+    "Noto Sans CJK SC", "Source Han Sans SC", sans-serif;
+  /* 统一节奏：圆角 3 档、阴影 2 档 */
+  --r-sm: 8px; --r-md: 12px; --r-lg: 18px;
+  --polish-shadow-1: 0 1px 2px rgba(58, 46, 34, .05), 0 4px 12px -6px rgba(58, 46, 34, .18);
+  --polish-shadow-2: 0 2px 6px rgba(58, 46, 34, .06), 0 14px 34px -12px rgba(58, 46, 34, .26);
+  /* 强调色的“更深一档”：不能直接用 --pink-deep —— 深色主题里它是浅色（给文字用的） */
+  --polish-accent-2: color-mix(in srgb, var(--pink) 76%, #1c1207);
+  --polish-bubble-a: color-mix(in srgb, var(--pink) 94%, #fff);
+  --polish-bubble-b: color-mix(in srgb, var(--pink) 76%, #1c1207);
+}
+
+html[data-core-ui], html[data-core-ui] body {
+  font-family: var(--polish-font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+[data-core-ui] ::selection { background: color-mix(in srgb, var(--pink) 26%, transparent); }
+
+/* ---------- 2. 调色板：更沉稳的纸感，对比度补齐 ---------- */
+:root[data-core-ui][data-core-palette][data-core-palette] {
+  --bg: #f6f3ee;
+  --bg-soft: #efeae2;
+  --surface: #fffefc;
+  --surface-2: #f5f1ea;
+  --border: #e4ddd2;
+  --border-strong: #cfc5b6;
+  --text: #221f1b;
+  --text-2: #575047;
+  --text-3: #857c70;
+  --pink: #5b6577;
+  --pink-deep: #3f4756;
+  --pink-soft: #e9e6df;
+  --mint: #4d8a78;
+  --sky: #6f9cc0;
+  --shadow: var(--polish-shadow-2);
+  --shadow-sm: var(--polish-shadow-1);
+}
+
+/* 四套配色都往「更深的墨色 + 克制的暖底」调，保证白字对比度 */
+:root[data-core-ui][data-core-palette][data-core-palette='blue'] {
+  --bg: #f4f6fa; --bg-soft: #eaeef6; --surface: #fffefc; --surface-2: #eef1f7;
+  --border: #dde3ee; --border-strong: #c2cbdb; --text: #1b2230;
+  --pink: #3f5f9e; --pink-deep: #2f4a80; --pink-soft: #e4ebf7;
+}
+:root[data-core-ui][data-core-palette][data-core-palette='green'] {
+  --bg: #f3f7f3; --bg-soft: #e8f0e8; --surface: #fffefc; --surface-2: #edf3ed;
+  --border: #dbe6dc; --border-strong: #bfd0c2; --text: #1c2620;
+  --pink: #2f6f52; --pink-deep: #245741; --pink-soft: #e2efe7;
+}
+:root[data-core-ui][data-core-palette][data-core-palette='warm'] {
+  --bg: #faf6ef; --bg-soft: #f2eadd; --surface: #fffdf9; --surface-2: #f6efe4;
+  --border: #e8ddcc; --border-strong: #d2c1a8; --text: #271f17;
+  --pink: #6b5340; --pink-deep: #4a382a; --pink-soft: #efe7dc;
+}
+
+:root[data-core-ui].dark[data-core-palette][data-core-palette] {
+  --bg: #14161a; --bg-soft: #191c21; --surface: #20242a; --surface-2: #272c33;
+  --border: #333941; --border-strong: #48505a; --text: #eef1f5;
+  --text-2: #b4bcc7; --text-3: #88919d;
+  --pink: #8b97a8; --pink-deep: #b9c3d1; --pink-soft: #2b3644;
+  --polish-accent-2: color-mix(in srgb, var(--pink) 66%, #000);
+  --polish-bubble-a: color-mix(in srgb, var(--pink) 86%, #241408);
+  --polish-bubble-b: color-mix(in srgb, var(--pink) 62%, #140b04);
+  --polish-shadow-1: 0 1px 2px rgba(0,0,0,.4), 0 6px 16px -8px rgba(0,0,0,.6);
+  --polish-shadow-2: 0 2px 8px rgba(0,0,0,.45), 0 20px 40px -16px rgba(0,0,0,.7);
+}
+:root[data-core-ui].dark[data-core-palette][data-core-palette='blue'] { --pink:#5d80c4; --pink-deep:#93b1e8; --pink-soft:#243349; }
+:root[data-core-ui].dark[data-core-palette][data-core-palette='green'] { --pink:#4f9776; --pink-deep:#8fcbb0; --pink-soft:#20362b; }
+:root[data-core-ui].dark[data-core-palette][data-core-palette='warm'] { --pink:#9c7a5e; --pink-deep:#d3b494; --pink-soft:#332a22; }
+
+/* 页面底色加一点点光，避免大片死平 */
+[data-core-ui] body {
+  background:
+    radial-gradient(1100px 520px at 8% -12%, color-mix(in srgb, var(--pink) 7%, transparent), transparent 62%),
+    radial-gradient(900px 480px at 100% 0%, color-mix(in srgb, var(--mint) 5%, transparent), transparent 58%),
+    var(--bg);
+  background-attachment: fixed;
+}
+
+/* ---------- 3. 顶栏 ---------- */
+[data-core-ui] .topbar {
+  background: color-mix(in srgb, var(--bg) 76%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--surface) 60%, transparent) inset;
+}
+[data-core-ui] .core-bar-inner { min-height: 60px; }
+
+[data-core-ui] .core-brand { gap: 10px; }
+[data-core-ui] .core-brand-mark {
+  border-radius: 13px;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--pink) 92%, #fff) 0%, var(--polish-accent-2) 100%);
+  color: #fff;
+  box-shadow: 0 6px 14px -6px var(--polish-accent-2),
+              inset 0 1px 0 rgba(255, 255, 255, .28);
+  font-weight: 700;
+}
+[data-core-ui] .core-brand .brand-word { letter-spacing: .02em; }
+
+/* 导航：改成「胶囊 + 底部墨线」的层次 */
+[data-core-ui] .visual-main-nav {
+  gap: 2px;
+  padding: 3px;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--surface-2) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+}
+[data-core-ui] .visual-nav-link {
+  border-radius: 9px;
+  font-weight: 500;
+  color: var(--text-2);
+  transition: background .16s ease, color .16s ease, box-shadow .16s ease;
+}
+[data-core-ui] .visual-nav-link:hover {
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  color: var(--text);
+}
+[data-core-ui] .visual-nav-link[aria-current='page'] {
+  background: var(--surface);
+  color: var(--pink-deep);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(58,46,34,.06), 0 4px 10px -6px rgba(58,46,34,.25);
+}
+
+/* ---------- 4. 侧栏 ---------- */
+[data-core-ui] aside {
+  background: color-mix(in srgb, var(--surface) 92%, var(--bg));
+}
+[data-core-ui] .session-item {
+  border-radius: var(--r-md);
+  padding: 11px 12px;
+  margin: 3px 8px;
+  transition: background .16s ease, box-shadow .16s ease, transform .12s ease;
+}
+[data-core-ui] .session-item:hover {
+  background: color-mix(in srgb, var(--surface-2) 80%, transparent);
+}
+[data-core-ui] .session-item.on,
+[data-core-ui] .session-item[aria-current='page'] {
+  background: var(--pink-soft);
+  box-shadow: inset 3px 0 0 var(--pink-deep);
+}
+[data-core-ui] .session-emoji {
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--pink-soft) 85%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+/* ---------- 5. 聊天区 ---------- */
+[data-core-ui] .visual-chat-reading {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-soft) 90%, var(--surface)) 0%, var(--bg-soft) 220px);
+}
+[data-core-ui] .visual-chat-header {
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+}
+[data-core-ui] .visual-chat-title { font-weight: 600; letter-spacing: .01em; }
+
+/* 气泡：18px 圆角 + 一个"手指角"，用户侧用主色渐变 */
+[data-core-ui] .visual-chat-reading div[class*="rounded-2xl"][class*="px-4"][class*="py-2"] {
+  border-radius: var(--r-lg);
+  border-bottom-right-radius: 6px;
+  line-height: 1.72;
+  box-shadow: var(--polish-shadow-1);
+}
+[data-core-ui] .visual-chat-reading div[class*="bg-[var(--pink)]"] {
+  background: linear-gradient(158deg, var(--polish-bubble-a) 0%, var(--polish-bubble-b) 100%) !important;
+  border-bottom-right-radius: 6px;
+  box-shadow: 0 8px 18px -12px var(--polish-accent-2);
+}
+[data-core-ui] .visual-chat-reading div[class*="bg-[var(--surface)]"] {
+  background: var(--surface) !important;
+  border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+  border-bottom-left-radius: 6px;
+}
+
+/* ---------- 6. 输入区 ---------- */
+[data-core-ui] .chat-composer-footer {
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  padding: 14px 20px 18px;
+}
+[data-core-ui] .composer-textarea {
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  padding: 13px 16px;
+  line-height: 1.72;
+  transition: border-color .16s ease, box-shadow .16s ease;
+}
+[data-core-ui] .composer-textarea::placeholder { color: var(--text-3); }
+[data-core-ui] .composer-textarea:hover { border-color: color-mix(in srgb, var(--border-strong) 70%, var(--pink)); }
+[data-core-ui] .composer-textarea:focus {
+  border-color: var(--pink);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pink) 16%, transparent);
+}
+[data-core-ui] .composer-send {
+  border-radius: var(--r-md);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--pink) 92%, #fff), var(--polish-accent-2));
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 6px 16px -10px var(--polish-accent-2);
+  transition: transform .12s ease, box-shadow .16s ease, filter .16s ease;
+}
+[data-core-ui] .composer-send:hover:not(:disabled) { filter: brightness(1.05); transform: translateY(-1px); }
+[data-core-ui] .composer-send:active:not(:disabled) { transform: translateY(0); }
+[data-core-ui] .composer-send:disabled { filter: grayscale(.35); box-shadow: none; }
+
+/* ---------- 7. 按钮与交互件 ---------- */
+[data-core-ui] .btn {
+  border-radius: 10px;
+  transition: background .16s ease, border-color .16s ease, box-shadow .16s ease, transform .12s ease;
+}
+[data-core-ui] .btn:hover { box-shadow: var(--polish-shadow-1); }
+[data-core-ui] .btn:active { transform: translateY(1px); }
+[data-core-ui] button:focus-visible,
+[data-core-ui] summary:focus-visible,
+[data-core-ui] textarea:focus-visible,
+[data-core-ui] input:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--pink) 70%, transparent);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+[data-core-ui] details>summary { transition: color .16s ease; }
+
+/* 顶栏小圆钮（外观 / 夜间） */
+[data-core-ui] .topbar button,
+[data-core-ui] .topbar .core-appearance>summary {
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+  transition: background .16s ease, border-color .16s ease, color .16s ease;
+}
+[data-core-ui] .topbar button:hover,
+[data-core-ui] .topbar .core-appearance>summary:hover {
+  border-color: color-mix(in srgb, var(--pink) 55%, var(--border));
+  color: var(--pink-deep);
+}
+
+/* 浮层统一阴影 */
+[data-core-ui] .core-appearance-panel,
+[data-core-ui] .visual-tools-content,
+[data-core-ui] .market-confirm {
+  border-radius: var(--r-md);
+  box-shadow: var(--polish-shadow-2);
+  border-color: color-mix(in srgb, var(--border-strong) 80%, transparent);
+}
+
+/* ---------- 8. 空白态 ---------- */
+[data-core-ui] .core-empty {
+  background:
+    radial-gradient(520px 260px at 50% 18%, color-mix(in srgb, var(--pink) 8%, transparent), transparent 70%),
+    var(--bg);
+}
+[data-core-ui] .core-empty>span:first-child,
+[data-core-ui] .core-empty>svg:first-child {
+  opacity: .55;
+}
+
+/* ---------- 9. 滚动条 ---------- */
+[data-core-ui] * { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--border-strong) 70%, transparent) transparent; }
+[data-core-ui] ::-webkit-scrollbar { width: 10px; height: 10px; }
+[data-core-ui] ::-webkit-scrollbar-track { background: transparent; }
+[data-core-ui] ::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--border-strong) 65%, transparent);
+  border-radius: 99px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+[data-core-ui] ::-webkit-scrollbar-thumb:hover { background: var(--border-strong); background-clip: content-box; }
+
+/* ---------- 10. 减少动效偏好 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  [data-core-ui] *, [data-core-ui] *::before, [data-core-ui] *::after {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+  }
+}
+
+/* ============================================================================
+   11. 跨页面一致性（设置 / 角色介绍 / 私人空间 / 插件市场 等）
+   目标：同一件事在四个页面看起来是同一件东西。
+   ========================================================================== */
+
+/* --- 卡片圆角归一：原来 22px / 20px / 16px / 12px / 8px 混用 --- */
+[data-core-ui] [class*="rounded-[22px]"],
+[data-core-ui] [class*="rounded-[20px]"],
+[data-core-ui] [class*="rounded-[18px]"] {
+  border-radius: var(--r-lg) !important;
+}
+[data-core-ui] .core-character,
+[data-core-ui] section[class*="border"][class*="bg-[var(--surface)]"] {
+  border-radius: var(--r-lg);
+}
+
+/* --- 表单控件：从「大片米色填充」改为「白底 + 细描边」 --- */
+[data-core-ui] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not([type='file']),
+[data-core-ui] textarea:not(.composer-textarea),
+[data-core-ui] select {
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--border-strong) 78%, transparent);
+  border-radius: var(--r-sm);
+  padding: 8px 11px;
+  color: var(--text);
+  box-shadow: none;
+  transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+}
+[data-core-ui] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not([type='file']):hover,
+[data-core-ui] textarea:not(.composer-textarea):hover,
+[data-core-ui] select:hover {
+  border-color: color-mix(in srgb, var(--border-strong) 55%, var(--pink));
+}
+[data-core-ui] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not([type='file']):focus,
+[data-core-ui] textarea:not(.composer-textarea):focus,
+[data-core-ui] select:focus {
+  outline: none;
+  border-color: var(--pink);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pink) 14%, transparent);
+}
+[data-core-ui] input::placeholder,
+[data-core-ui] textarea::placeholder { color: var(--text-3); }
+
+/* 原生复选框稍微收一下，跟圆角体系一致 */
+[data-core-ui] input[type='checkbox'],
+[data-core-ui] input[type='radio'] { accent-color: var(--pink-deep); }
+
+/* --- 胶囊（chip）统一：高度、内边距、描边一致 --- */
+[data-core-ui] button[class*="rounded-full"] {
+  min-height: 28px;
+  border-radius: 999px;
+  border-color: color-mix(in srgb, var(--border-strong) 70%, transparent);
+  transition: background .16s ease, border-color .16s ease, color .16s ease;
+}
+[data-core-ui] button[class*="rounded-full"]:hover {
+  border-color: color-mix(in srgb, var(--pink) 55%, var(--border));
+  color: var(--pink-deep);
+}
+
+/* 选中态：不使用深色实心（太重），改成浅主色底 + 主色字 + 明显描边 */
+[data-core-ui] button[aria-pressed='true'],
+[data-core-ui] button[class*="rounded-full"][class*="bg-[var(--pink-deep)]"],
+[data-core-ui] button[class*="rounded-full"][class*="bg-[var(--pink)]"] {
+  background: var(--pink-soft) !important;
+  color: var(--pink-deep) !important;
+  border-color: color-mix(in srgb, var(--pink) 45%, var(--border)) !important;
+  font-weight: 600;
+}
+
+/* --- 按钮层级：主按钮实心、次按钮白底描边、三级按钮透明 --- */
+[data-core-ui] button[class*="bg-[var(--pink-deep)]"]:not([class*="rounded-full"]),
+[data-core-ui] .btn-primary {
+  border-radius: 10px;
+  font-weight: 600;
+  transition: filter .16s ease, transform .12s ease;
+}
+[data-core-ui] button[class*="bg-[var(--pink-deep)]"]:not([class*="rounded-full"]):hover {
+  filter: brightness(1.06);
+}
+[data-core-ui] button[class*="bg-[var(--pink-deep)]"]:not([class*="rounded-full"]):active {
+  transform: translateY(1px);
+}
+
+/* --- 段落与标题的垂直节奏统一 --- */
+[data-core-ui] h1, [data-core-ui] h2, [data-core-ui] h3, [data-core-ui] h4 {
+  letter-spacing: .01em;
+  text-wrap: balance;
+}
+[data-core-ui] section > h2,
+[data-core-ui] section > h3 { margin-bottom: 10px; }
+
+/* --- 分隔线颜色统一（原来有的用 border 有的用 border-strong） --- */
+[data-core-ui] hr { border: 0; border-top: 1px solid var(--border); }
+
+/* ============================================================================
+   12. 修掉旧主题残留 + 属性块 / 选中态统一
+   index.css 里有 4 处写死的粉色光晕 rgba(242,126,158,·)，在蓝/绿/灰褐配色下
+   会泛粉光 —— 换成由当前主色推导的阴影。
+   ========================================================================== */
+[data-core-ui] .btn {
+  box-shadow: 0 6px 16px -10px var(--polish-accent-2);
+}
+[data-core-ui] .btn:hover {
+  box-shadow: 0 10px 24px -14px var(--polish-accent-2);
+}
+[data-core-ui] .persona-card.on {
+  box-shadow: 0 8px 20px -12px var(--polish-accent-2);
+}
+
+/* 角色/身份胶囊：选中不再用深色实心 + 粉光，改成浅主色底 + 主色字 */
+[data-core-ui] .member.on {
+  background: var(--pink-soft);
+  color: var(--pink-deep);
+  border-color: color-mix(in srgb, var(--pink) 45%, var(--border));
+  box-shadow: 0 4px 12px -8px var(--polish-accent-2);
+}
+[data-core-ui] .member:hover { transform: translateY(-1px); }
+
+/* 属性块：米色填充 -> 白底细描边（和表单控件一致） */
+[data-core-ui] .attr {
+  background: var(--surface);
+  border-color: color-mix(in srgb, var(--border-strong) 62%, transparent);
+  border-radius: 10px;
+  transition: border-color .16s ease, box-shadow .16s ease;
+}
+[data-core-ui] .attr:hover {
+  border-color: color-mix(in srgb, var(--pink) 45%, var(--border));
+}
+[data-core-ui] .attr.priv {
+  background: color-mix(in srgb, var(--pink-soft) 55%, var(--surface));
+  border-color: color-mix(in srgb, var(--pink) 26%, var(--border));
+}
+[data-core-ui] .attr .k { letter-spacing: .04em; }
+
+/* ============================================================================
+   13. 小窝/设置 顶部分区入口：裸按钮 -> 分段控件（与顶栏导航同一套语言）
+   ========================================================================== */
+[data-core-ui] .nest-room-nav {
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-2) 62%, transparent);
+}
+[data-core-ui] .nest-room-nav > button {
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  transition: background .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+[data-core-ui] .nest-room-nav > button:hover {
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+}
+[data-core-ui] .nest-room-nav > button[aria-current='page'],
+[data-core-ui] .nest-room-nav > button[aria-selected='true'],
+[data-core-ui] .nest-room-nav > button[aria-pressed='true'] {
+  background: var(--surface);
+  border-color: color-mix(in srgb, var(--border) 90%, transparent);
+  box-shadow: 0 1px 2px rgba(58, 46, 34, .05), 0 4px 10px -6px rgba(58, 46, 34, .22);
+}

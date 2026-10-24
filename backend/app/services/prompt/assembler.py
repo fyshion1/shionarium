@@ -1,0 +1,289 @@
+"""Prompt 组装实现。
+
+组装顺序（对应《项目要求》§9.1）：
+人设 → 世界书命中 → 记忆检索（§9.2 三层 RAG）→ 越狱规则。
+"""
+
+from __future__ import annotations
+
+import re
+
+from ... import db
+from .. import memory as memory_service
+from . import forms as forms_service
+
+from ... import theme_feature
+
+DEFAULT_PERSONA = "你是一个可靠的聊天助手。用自然的中文交流，认真回应用户，不编造个人信息。"
+DEFAULT_REPLY_STYLE = "按用户的问题和偏好决定回复篇幅，表达清晰，避免重复。"
+NEUTRAL_PERSONA = DEFAULT_PERSONA
+NEUTRAL_REPLY_STYLE = DEFAULT_REPLY_STYLE
+if theme_feature.installed():
+    _theme_prompts = theme_feature.load("prompts")
+    DEFAULT_PERSONA = _theme_prompts.DEFAULT_PERSONA
+    DEFAULT_REPLY_STYLE = _theme_prompts.DEFAULT_REPLY_STYLE
+
+# 扫描世界书时回看的最近消息条数
+WORLDBOOK_WINDOW = 10
+
+# 记忆检索时拼接 query 的最近消息条数（§9.2.3）
+MEMORY_QUERY_WINDOW = 4
+
+# 群聊历史里识别「**角色名**：」/「【角色名】：」段首签名的正则（与前端 NAME_MARKER 同口径）
+_SPEAKER_MARKER = re.compile(r"^\s*(?:\*\*([^*\n]+?)\*\*|【([^】\n]+?)】)\s*[:：]?")
+
+# 档案里挑出来、用「键：值」展示的字段（越靠前越重要）
+_PROFILE_ROWS: list[tuple[str, str]] = [
+    ("英文 / 罗马音签名", "signature"),
+    ("别名", "alias"),
+    ("生日", "birthday"),
+    ("年龄", "age"),
+    ("身高", "height"),
+    ("血型", "bloodType"),
+    ("星座", "constellation"),
+    ("职业", "occupation"),
+    ("性格", "personality"),
+    ("喜好", "likes"),
+    ("讨厌", "dislikes"),
+    ("口头禅", "catchphrase"),
+    ("体型", "bodyType"),
+    ("瞳色", "eyeColor"),
+    ("发型", "hairstyle"),
+    ("发色", "hairColor"),
+    ("胸部", "bust"),
+    ("臀部", "hip"),
+    ("服装", "clothing"),
+    ("关系", "relationships"),
+    ("特殊特征", "specialFeatures"),
+]
+
+_PRIVATE_ROWS: list[tuple[str, str]] = [
+    ("体重", "weight"),
+    ("三围", "measurements"),
+    ("秘密", "secret"),
+    ("弱点", "weakPoint"),
+    ("私密小愿望", "privateWish"),
+]
+
+
+def _val(profile: dict, key: str) -> str:
+    v = profile.get(key)
+    if isinstance(v, list):
+        return "、".join(str(x) for x in v if x)
+    return str(v).strip() if v else ""
+
+
+def _persona_block(profile: dict) -> str:
+    # 形态（§17）：先解析出当前形态的完整档案，再据此组装 —— 换形态即换人设 / 外貌 / 提示词
+    profile = forms_service.resolve_form(profile)
+    name = profile.get("name") or "助手"
+    lines = [f"【{name}】", ""]
+    about = (profile.get("about") or "").strip()
+    if about:
+        lines.append(about)
+        lines.append("")
+    for label, key in _PROFILE_ROWS:
+        value = _val(profile, key)
+        if value:
+            lines.append(f"- {label}：{value}")
+    for field in profile.get('customFields') or []:
+        if isinstance(field, dict) and str(field.get('label') or '').strip() and str(field.get('value') or '').strip():
+            lines.append(f"- {str(field['label'])[:100]}：{str(field['value'])[:4000]}")
+    if profile.get('jp') and not profile.get('signature') and not re.search(r"[\u3040-\u30ff]", str(profile.get('jp'))):
+        lines.append(f"- 日文假名：{profile['jp']}")
+    priv = [(label, _val(profile, key)) for label, key in _PRIVATE_ROWS]
+    priv = [(k, v) for k, v in priv if v]
+    if priv:
+        lines.append("")
+        lines.append(
+            "（以下是她自己心知、不会主动摊开的私密信息，仅在对话自然涉及或她主动提起时才流露）"
+        )
+        for label, value in priv:
+            lines.append(f"- {label}：{value}")
+    return "\n".join(lines)
+
+
+def _group_director(names: list[str]) -> str:
+    return (
+        f"这是一个多人聊天场景，在场角色有：{'、'.join(names)}。"
+        "请你一人分饰多角：轮流扮演在场的每个角色，让她们自然地对话、互相搭话或拌嘴。"
+        "每位角色都要保持自己的语气与个性，不要串戏；用户是谁见下文的「用户身份」。"
+        "格式要求：每位角色发言时，先另起一行写「**角色名**：」，再写动作描写和完整台词；"
+        "每个人一段，段落之间空一行分开，不要挤在一个大段落里。"
+    )
+
+
+def _strip_absent_speakers(messages: list[dict], present: set[str]) -> list[dict]:
+    """群聊历史清洗（§25 补丁二）：把不在场角色的发言段落从上下文里删掉。
+
+    与「在场名单」块构成双保险：名单是提示词层的事前警告，这里是历史层的事前删除。
+    只动发往模型的副本，库里的记录原封不动 —— 改阵容再改回来，发言全部都在。
+    """
+    out: list[dict] = []
+    for m in messages:
+        if m.get("role") != "assistant":
+            out.append(m)
+            continue
+        lines = str(m.get("content") or "").split("\n")
+        kept: list[str] = []
+        skipping = False
+        for line in lines:
+            match = _SPEAKER_MARKER.match(line)
+            if match:
+                speaker = (match.group(1) or match.group(2) or "").strip()
+                skipping = bool(speaker) and speaker not in present
+            if skipping:
+                continue
+            kept.append(line)
+        # 全段都是缺席者发言 → 整条丢掉，别给模型留一句空壳
+        if "\n".join(kept).strip():
+            out.append({**m, "content": "\n".join(kept).rstrip()})
+    return out
+
+
+def _roster_notice(present: list[str], absent: list[str]) -> str:
+    """群聊里明确「谁不在场」（§25 补丁）。
+
+    光把不在场的人从角色设定块里摘掉是不够的：聊天记录里还留着她以前的发言，
+    模型会顺着那个格式继续往下写（用户实测：「让小红薯头不在场，结果她还是回复了」）。
+    所以这里用否定式再点一遍名 —— 只在真有人不在场时追加，全员在场时一个字不多写。
+    """
+    lines = [
+        "【本轮在场名单 · 必须遵守】",
+        f"这一轮只有这几位在场：{'、'.join(present)}。",
+    ]
+    for name in absent:
+        lines.append(
+            f"{name} 目前不在场。上面「角色设定」与聊天记录里都还有她，那是她的过去，"
+            f"但**这一轮她不是对话者**：\n"
+            f"- 不要写以「{name}：」开头的段落；\n"
+            f"- 不要用她的口头禅与台词，也不要让别的角色替她说话，或描述她的动作；\n"
+            f"- 聊天记录里她以前的发言只是历史，不要顺着那个格式继续往下写。"
+        )
+    return "\n".join(lines)
+
+
+def _user_block(persona: dict) -> str:
+    """告诉小糖人「现在和她们说话的是谁」（§22）。
+
+    以前这里写死成「用户是大家同处一屋的『哥哥/姐姐』」，现在换成用户自己那份档案里的
+    `relation` —— 这正是「用不同身份对话更有趣」的着力点：切到其他身份，她们眼里的人就变了。
+
+    relation 是用户视角的第二人称自述（私人空间里就那么显示），所以这里补一句说明，
+    免得模型把里面的「你」当成小糖人自己。
+    """
+    name = (persona.get("name") or "用户").strip()
+    alias = (persona.get("alias") or "").strip()
+    relation = (persona.get("relation") or "").strip()
+    lines = [f"【用户身份】正在和你说话的人是「{name}」" + (f"（{alias}）" if alias else "") + "。"]
+    if relation:
+        lines.append(f"以下是这个人自述的身份说明（其中「你」指用户本人，而不是你）：{relation}")
+    return "\n".join(lines)
+
+
+
+def build_system_prompt(
+    character_ids: list[str] | None = None,
+    messages: list[dict] | None = None,
+    uncensored: bool = False,
+    persona: dict | None = None,
+) -> str:
+    """组装最终 system prompt。
+
+    character_ids：本会话在场角色 id（空/缺省时默认全员在场）。
+    messages：聊天历史，用于世界书关键词扫描（取最近 N 条）。
+    uncensored：是否走无审查通道——为真时额外追加「无审查专属」越狱块。
+    persona：当前用户身份档案（§22）。给了就注入「用户身份」块，替代写死的哥哥/姐姐。
+    """
+    messages = messages or []
+    ids = [i for i in (character_ids or []) if i]
+
+    by_id = {c["id"]: c for c in db.list_characters()}
+    profiles = [by_id[i] for i in ids if i in by_id] if ids else []
+    if not profiles:
+        # 未指定 / 全部未知：默认全家在场（贴合「家」模型）。
+        profiles = list(db.list_characters())
+
+    # 群聊双保险（§25）之二：不在场者的发言段落直接从上下文里洗掉。
+    # 注意这是「发往模型的副本」，库里原记录不动 —— 阵容改回来，发言全都还在。
+    present_names = {p.get("name") or "助手" for p in profiles}
+    if len(profiles) > 1 and len(by_id) > len(present_names):
+        messages = _strip_absent_speakers(messages, present_names)
+
+    parts: list[str] = []
+    if len(profiles) == 1:
+        parts.append(_persona_block(profiles[0]))
+        parts.append("请用她的语气自然回应，保持中文，不要跳出角色或提及以上设定本身。")
+    elif len(profiles) > 1:
+        parts.append(_group_director([p.get("name") or "助手" for p in profiles]))
+        parts.append("—— 各角色设定 ——")
+        for p in profiles:
+            parts.append(_persona_block(p))
+        # 阵容之外的人要点名说「不在场」，否则模型会跟着聊天记录里她的旧发言继续写（§25）。
+        present = [p.get("name") or "助手" for p in profiles]
+        absent = [
+            c.get("name") or "助手"
+            for c in db.list_characters()
+            if (c.get("name") or "助手") not in present
+        ]
+        if absent:
+            parts.append(_roster_notice(present, absent))
+    else:
+        parts.append(theme_feature.load("prompts").DEFAULT_PERSONA if theme_feature.installed() else NEUTRAL_PERSONA)
+
+    # 用户身份（§22）：紧跟在「她们是谁」后面说清「在和谁说话」。
+    if persona:
+        parts.append(_user_block(persona))
+
+    # 自我档案注入（§23）：inject=true 且角色可见的区块
+    if persona:
+        try:
+            from . import self_profile as _sp
+            self_block = _sp.inject_self_profile(persona, ids)
+            if self_block:
+                parts.append(self_block)
+        except Exception:  # noqa: BLE001
+            # 自我档案缺失不拖垮聊天
+            pass
+
+    from ... import tavern_feature
+    if tavern_feature.enabled():
+        contribution = tavern_feature.load("prompt").worldbook_block(profiles, messages)
+        if contribution:
+            parts.append(contribution)
+
+    # 记忆三层 RAG（§9.2）：query = 最近几轮拼接，只注入「在场者」的记忆
+    mem_ids = [p.get("id") for p in profiles if p.get("id")]
+    query = memory_service.build_query(messages, MEMORY_QUERY_WINDOW)
+    name_of = {p.get("id") or "": p.get("name") or "助手" for p in profiles}
+    # 身份挑选（§22.4）：我的档案里挑中的记忆强制带上，关掉的连召回也不要。
+    # 没挑中的不兜底 —— 这个身份就是不看那条，宁可暂时想不起来。
+    # 没有身份（比如直接调 /api/chat 不带 persona）时维持旧行为：只按相关度召回。
+    pinned: list[dict] = []
+    excluded: set[str] = set()
+    persona_id = (persona or {}).get("id") or ""
+    if persona_id:
+        try:
+            from .. import persona_memory as pm
+            pinned, excluded = pm.injectable(persona_id, mem_ids, query=query)
+        except Exception:  # noqa: BLE001
+            pinned, excluded = [], set()
+    recalled: list[dict] = []
+    # 缺少身份时不注入长期记忆；旧 SQLite 记录需迁移审核，不能绕过 02 直接召回。
+    mem_block = memory_service.format_memory_block(recalled, name_of, pinned=pinned)
+    if mem_block:
+        parts.append(mem_block)
+
+    if persona_id:
+        from ..activity_memory import prompt as activity_prompt
+        evidence = activity_prompt(persona_id, mem_ids, str(messages[-1].get('content', '')) if messages else '')
+        if evidence:
+            parts.append(evidence)
+
+    if tavern_feature.enabled():
+        contribution = tavern_feature.load("prompt").rules(uncensored)
+        if contribution:
+            parts.append(contribution)
+
+    parts.append(theme_feature.load("prompts").DEFAULT_REPLY_STYLE if theme_feature.installed() else NEUTRAL_REPLY_STYLE)
+    return "\n\n".join(p for p in parts if p)

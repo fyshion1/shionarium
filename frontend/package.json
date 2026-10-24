@@ -1,0 +1,40 @@
+{
+  "name": "xiaotangren-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "test:voice": "node --test tests/voice-call.test.mjs",
+    "dev": "vite",
+    "build": "node tools/typecheck.mjs && vite build",
+    "typecheck": "node tools/typecheck.mjs",
+    "preview": "vite preview",
+    "test:stream": "node --test tests/stream.test.mjs",
+    "test:tools": "node tests/tools-browser.mjs",
+    "test:card-html": "node tests/card-html.mjs",
+    "test:card-assets": "node tests/card-assets.mjs",
+    "test:card-import": "node tests/card-import-manual.mjs",
+    "test:visual": "node tests/visual-smoke.mjs"
+  },
+  "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
+    "@pixiv/three-vrm": "^3.5.5",
+    "pixi-live2d-display": "^0.5.0-beta",
+    "pixi.js": "^7.4.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.0",
+    "@types/three": "^0.186.0",
+    "@vitejs/plugin-react": "^4.3.2",
+    "react-grab": "^0.2.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.8"
+  }
+}

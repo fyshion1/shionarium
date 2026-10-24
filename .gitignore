@@ -1,0 +1,110 @@
+# Local secrets override — never commit
+.env
+app/config.local.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.uv/
+.pytest_cache/
+.ruff_cache/
+
+# Node / frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+*.tsbuildinfo
+
+# Runtime data
+*.db
+*.sqlite3
+# 只忽略运行期数据目录，别误伤前端源码 frontend/src/data/（源码里也有叫 data 的目录）
+/data/
+/backend/data/
+# 运行期日志（重启大脑的新进程也往这儿写）—— 里面有本机路径，不进 git
+/backend/logs/
+
+# TTS voice models (large files — download on demand)
+backend/data/tts/piper/
+
+# 公网穿透的 cloudflared.exe（~50 MB，别进 git）
+# start-tunnel.bat 找不到它会打印下载地址，重新下也就 20 秒。
+/cloudflared.exe
+cloudflared.exe
+
+# Embedding models for memory RAG (large files — download on demand)
+# 实际落点 backend/data/models/ 已被上面的 data/ 覆盖，这里再兜一层，换目录也不怕。
+**/data/models/
+
+# Models (large binary files — keep local only)
+models/*.vrm
+models/**/*.moc3
+models/**/*.json
+!models/.gitkeep
+
+# Local design/reference assets (keep local only)
+reference_picture/
+
+# OS
+.DS_Store
+Thumbs.db
+# Claude Code 本地数据（设置 / worktrees 等，机器相关，不进 git）
+.claude/
+
+# 个人数据库（让小糖人索引用，日常更新维护，不进 git）
+/个人数据库/
+/个人记忆库/
+
+# Agent 联调中间 JSON（暂存数据，不进 git）
+docs/agent-game-handoff.json
+docs/pending-agent-response-*.json
+
+# 小窝功能（§9.6）：每个功能是独立项目、单独 git，本体仓库不收它们的内容。
+# 只保留一个 README，说明这个目录是干什么的。
+/features/*
+!/features/README.md
+!/features/.gitkeep
+
+# 本地编辑器配置（tasks 里可能指向临时 worktree，不进仓库）
+.vscode/
+
+# SnowLuma WebUI 本机的密码哈希（机器相关，不进 git）
+backend/config/webui.json
+
+# Private authoring documents and local research are not framework source.
+/规划探讨.md
+/角色设定.md
+/项目坑点总结.md
+/项目要求.txt
+/ui-preview.html
+/doc/
+/docs/plans/
+/docs/product/
+/docs/research/
+/docs/evaluations/
+/docs/desktop-pet-review/
+/docs/*evidence/
+/assets/酒馆角色卡/
+/evals/memory/pilot-config.json
+/evals/memory/runs/
+/evals/memory/model-plans/
+/evals/memory/model-runs/
+/evals/memory/validations/
+/evals/memory/workflow-runs/
+/evals/memory/topic-drift-runs/
+
+/backend/config/runtime.json
+/frontend/artifacts/
+
+# Separately obtained runtime/models; never ship these in framework source.
+/assets/live2d/
+/assets/models/vrm/AliciaSolid_vrm-0.51.vrm
+/frontend/public/vendor/live2dcubismcore.min.js
+
+# User-supplied avatar/model binaries are never distributed.
+assets/models/**/*.vrm
+assets/models/**/*.fbx
+
+/docs/integrations/qq-gateway-snowluma.md
