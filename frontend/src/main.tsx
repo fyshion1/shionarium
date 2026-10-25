@@ -10,6 +10,8 @@ import {themeInstalled} from '#theme/config'
 import './visual/core-layout.css'
 // Neutral framework controls and palette styling.
 import './visual/neutral-polish.css'
+import './visual/appearance-packs.css'
+import {initializeAppearancePacks} from './visual/appearancePacks'
 
 // Visual selection context for design feedback; never loaded in production.
 if (import.meta.env.DEV) {
@@ -19,6 +21,7 @@ if (import.meta.env.DEV) {
 }
 
 applyCorePalette(readCorePalette())
+initializeAppearancePacks()
 if (!themeInstalled) document.documentElement.dataset.coreUi='true'
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

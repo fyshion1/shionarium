@@ -25,7 +25,7 @@ BACKEND = PROJECT_ROOT / 'backend'
 CATALOG = [
     dict(id='desktop_pet', name='桌宠', kind='plugin', folder='desktop-pet',
          description='在桌面显示角色、收发聊天；安装 Electron 和前端依赖，不自动启动。',
-         repository='fyshion1/desktop-pet', revision='2a5f866fa9b1ad7ef970afdd0b03efce7af778c8',
+         repository='fyshion1/desktop-pet', revision='10e0c7012b195994a80c88f69a60385add48738b',
          size='Electron 及前端依赖通常需要数百 MB', available=True),
     dict(id='qq_bridge', name='QQ 桥', kind='plugin', folder='qq-bridge',
          description='将 QQ 消息接入聊天。安装桥的 Python 依赖；QQ 账号和网关需另行配置。',

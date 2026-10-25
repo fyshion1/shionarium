@@ -54,7 +54,8 @@ try {
     const url = new URL(route.request().url())
     if(!url.pathname.startsWith('/api/')) {await route.continue();return}
     let data={}
-    if(url.pathname==='/api/plugin-market'||url.pathname==='/api/plugin-market/jobs') data={items:[]}
+    if(url.pathname==='/api/appearance-packs') data={items:[],errors:[]}
+    else if(url.pathname==='/api/plugin-market'||url.pathname==='/api/plugin-market/jobs') data={items:[]}
     else if(url.pathname==='/api/plugins') data={items:[{id:'xiaotangren_theme',name:'小糖人主题与设定',folder:'xiaotangren-theme',installed:true,archived:false,enabled:!disabled,hidden}]}
     else if(url.pathname==='/api/plugins/apply') {
       applyRequests++
@@ -117,12 +118,12 @@ try {
   assert.equal(await page.getByRole('button',{name:'外观与入场',exact:true}).count(),0)
   for(const label of ['小窝设置','小窝大脑','一起玩','共同回忆']) assert.equal(await page.getByRole('button',{name:label,exact:true}).count(),0)
   assert.equal(await page.getByText('糖人小窝 · v0.1.0',{exact:true}).count(),0)
-  assert.equal(await page.evaluate(()=>getComputedStyle(document.body).backgroundImage),'none')
+  assert.equal(await page.evaluate(()=>getComputedStyle(document.body).backgroundImage.includes('url(')),false)
   await page.locator('.core-appearance>summary').click()
   const appearance=page.getByRole('region',{name:'外观预设'})
-  assert.equal(await appearance.getByRole('button').count(),4)
+  assert.equal(await appearance.locator('.core-palette-options button').count(),4)
   await appearance.getByRole('button',{name:/森林绿/}).click()
-  assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--pink-deep').trim()),'#32785d')
+  assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--pink-deep').trim()),'#245741')
   await page.reload()
   await panel.getByRole('button',{name:'启用插件',exact:true}).waitFor()
   assert.equal(await page.evaluate(()=>document.documentElement.dataset.corePalette),'green')

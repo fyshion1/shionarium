@@ -137,6 +137,8 @@ gemini_sync_feature.mount(app)
 app.include_router(agents.router, prefix="/api")
 from .routers import character_packs as character_packs_router
 app.include_router(character_packs_router.router, prefix="/api")
+from .routers import appearance_packs as appearance_packs_router
+app.include_router(appearance_packs_router.router, prefix="/api")
 from .routers import assets as assets_router
 app.include_router(assets_router.router, prefix="/api")
 app.include_router(characters.router, prefix="/api")

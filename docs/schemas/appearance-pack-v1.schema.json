@@ -1,0 +1,245 @@
+{
+  "$defs": {
+    "Colors": {
+      "additionalProperties": false,
+      "properties": {
+        "light": {
+          "$ref": "#/$defs/Palette"
+        },
+        "dark": {
+          "$ref": "#/$defs/Palette"
+        }
+      },
+      "required": [
+        "light",
+        "dark"
+      ],
+      "title": "Colors",
+      "type": "object"
+    },
+    "Palette": {
+      "additionalProperties": false,
+      "properties": {
+        "background": {
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "title": "Background",
+          "type": "string"
+        },
+        "background_soft": {
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "title": "Background Soft",
+          "type": "string"
+        },
+        "surface": {
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "title": "Surface",
+          "type": "string"
+        },
+        "surface_raised": {
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "title": "Surface Raised",
+          "type": "string"
+        },
+        "text": {
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "title": "Text",
+          "type": "string"
+        },
+        "text_muted": {
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "title": "Text Muted",
+          "type": "string"
+        },
+        "text_subtle": {
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "title": "Text Subtle",
+          "type": "string"
+        },
+        "border": {
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "title": "Border",
+          "type": "string"
+        },
+        "border_strong": {
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "title": "Border Strong",
+          "type": "string"
+        },
+        "accent": {
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "title": "Accent",
+          "type": "string"
+        },
+        "accent_text": {
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "title": "Accent Text",
+          "type": "string"
+        },
+        "accent_soft": {
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "title": "Accent Soft",
+          "type": "string"
+        },
+        "mint": {
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "title": "Mint",
+          "type": "string"
+        },
+        "sky": {
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "title": "Sky",
+          "type": "string"
+        }
+      },
+      "required": [
+        "background",
+        "background_soft",
+        "surface",
+        "surface_raised",
+        "text",
+        "text_muted",
+        "text_subtle",
+        "border",
+        "border_strong",
+        "accent",
+        "accent_text",
+        "accent_soft",
+        "mint",
+        "sky"
+      ],
+      "title": "Palette",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": "appearance-pack",
+      "title": "Format",
+      "type": "string"
+    },
+    "format_version": {
+      "const": 1,
+      "title": "Format Version",
+      "type": "integer"
+    },
+    "id": {
+      "maxLength": 64,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "name": {
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "version": {
+      "maxLength": 40,
+      "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[a-zA-Z0-9.-]+)?$",
+      "title": "Version",
+      "type": "string"
+    },
+    "author": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Author",
+      "type": "string"
+    },
+    "license": {
+      "maxLength": 4000,
+      "minLength": 1,
+      "title": "License",
+      "type": "string"
+    },
+    "description": {
+      "default": "",
+      "maxLength": 2000,
+      "title": "Description",
+      "type": "string"
+    },
+    "colors": {
+      "$ref": "#/$defs/Colors"
+    },
+    "radius": {
+      "default": 12,
+      "maximum": 24,
+      "minimum": 0,
+      "title": "Radius",
+      "type": "integer"
+    },
+    "font": {
+      "default": "system",
+      "enum": [
+        "system",
+        "serif",
+        "monospace"
+      ],
+      "title": "Font",
+      "type": "string"
+    },
+    "font_file": {
+      "anyOf": [
+        {
+          "maxLength": 120,
+          "pattern": "^assets/[a-zA-Z0-9][a-zA-Z0-9_.-]*\\.(png|jpg|webp|woff2)$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Font File"
+    },
+    "background_file": {
+      "anyOf": [
+        {
+          "maxLength": 120,
+          "pattern": "^assets/[a-zA-Z0-9][a-zA-Z0-9_.-]*\\.(png|jpg|webp|woff2)$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Background File"
+    },
+    "background_opacity": {
+      "default": 0.12,
+      "maximum": 0.4,
+      "minimum": 0,
+      "title": "Background Opacity",
+      "type": "number"
+    },
+    "assets": {
+      "maxProperties": 16,
+      "patternProperties": {
+        "^assets/[a-zA-Z0-9][a-zA-Z0-9_.-]*\\.(png|jpg|webp|woff2)$": {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        }
+      },
+      "propertyNames": {
+        "maxLength": 120
+      },
+      "title": "Assets",
+      "type": "object"
+    }
+  },
+  "required": [
+    "format",
+    "format_version",
+    "id",
+    "name",
+    "version",
+    "author",
+    "license",
+    "colors"
+  ],
+  "title": "Manifest",
+  "type": "object"
+}

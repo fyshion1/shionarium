@@ -1,0 +1,50 @@
+{
+  "format": "appearance-pack",
+  "format_version": 1,
+  "id": "paper-ink",
+  "name": "纸与墨 / Paper & Ink",
+  "version": "1.0.0",
+  "author": "Shionarium contributors",
+  "license": "Apache-2.0",
+  "description": "暖纸色与蓝灰墨色，提供浅色和深色两套色板。",
+  "colors": {
+    "light": {
+      "background": "#f7f5f0",
+      "background_soft": "#eeebe3",
+      "surface": "#fffdf8",
+      "surface_raised": "#f1eee6",
+      "text": "#272c32",
+      "text_muted": "#535e68",
+      "text_subtle": "#707c87",
+      "border": "#dfded5",
+      "border_strong": "#bdbfb8",
+      "accent": "#416879",
+      "accent_text": "#2f5363",
+      "accent_soft": "#e0edf0",
+      "mint": "#508376",
+      "sky": "#688baf"
+    },
+    "dark": {
+      "background": "#171c20",
+      "background_soft": "#1d2429",
+      "surface": "#222a30",
+      "surface_raised": "#2a343c",
+      "text": "#edf0ed",
+      "text_muted": "#b6c3c9",
+      "text_subtle": "#8c9da6",
+      "border": "#39464d",
+      "border_strong": "#52646e",
+      "accent": "#6ca1b5",
+      "accent_text": "#b4d9e6",
+      "accent_soft": "#293f4a",
+      "mint": "#85b9a8",
+      "sky": "#91b0d0"
+    }
+  },
+  "radius": 12,
+  "font": "system",
+  "font_file": null,
+  "background_file": null,
+  "background_opacity": 0.12,
+  "assets": {}
+}
